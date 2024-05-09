@@ -1,4 +1,4 @@
-package study.querydsl.Entity;
+package study.querydsl.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,10 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Team {
-    @Id @GeneratedValue
+    @Id
+    @GeneratedValue
     private Long id;
     private String name;
 
@@ -26,6 +28,4 @@ public class Team {
     public Team(String name) {
         this.name = name;
     }
-
-
 }
