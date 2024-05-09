@@ -1,0 +1,24 @@
+# 테스트 될떄는 Test 폴더안에 이 파일이 더 우선권을 갖는다.
+spring:
+# springBoot가 아래 설정들이 없으면 기본적으로 jdbc:h2:mem:test로 동작.
+# 기본적으로 ddl-auto는 craete-drop이 default이다.
+
+#  datasource:
+#
+#    url: jdbc:h2:mem:test #db띄우는거없이 ㄴ
+#    username: sa
+#    password:
+#    driver-class-name: org.h2.Driver
+#  jpa:
+#    hibernate:
+#      ddl-auto: create
+#    properties:
+#      hibernate:
+#        show_sql: true  # consol에 찍힘
+#        format_sql: true
+
+
+logging.level:
+  org.hibernate.SQL: debug
+  org.hibernate.type: trace #스프링 부트 2.x, hibernate5
+# org.hibernate.orm.jdbc.bind: trace #스프링 부트 3.x, hibernate6

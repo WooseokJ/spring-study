@@ -1,0 +1,52 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource: # spring이 어떤 데이터를 가리킬것이냐?
+    url: "jdbc:h2:mem:library;MODE=MYSQL;NON_KEYWORDS=USER" # 스프링이 붙은 데이터 주소
+    username: "sa"
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+---  # 구분선으로 설정을 구분해준다.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver # db에 접근할떄 사용할 프로그램
+    url: "jdbc:mysql://localhost/library" # 스프링이 연결할 데이터 주소
+                                          # jdbc:mysql:// ( -jdbc(자바 데이터베이스 커넥터)를 이용해 mysql에 접근하다.)
+                                          # localhost: 접근하려는 mysql은 localhost 에있다.
+                                          # 접근하려는 DB는 library(db명) 이다.
+
+    username: "root" # mysql 접근하기위한 계정명
+    password: "dhkdn83277!"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none  # 스프링 시작시 DB에있는 테이블과 객체가 다르면 어떻게 처리할지?
+    properties:
+      hibernate:
+        show_sql: true # jpa사용해 DB에 sql 날릴떄 sql을 보여줄건가?
+        format_sql: true # 예쁘게 보여줄건가?
+        dialect: org.hibernate.dialect.MySQL8Dialect # 방언으로 이옵션은 DB에 sql 날릴떄 그 문법으로 날림.
+
+
+# ddl-auto
+# create: 기존테이블 삭제후 다시생성
+# create-drop: 스프링 종료시 테이블 모두 제거
+# update: 객체와 테이블이 다른부분만 변경.
+# validate: 객체와 테이블 동일한지 확인
+# none: 별다른 조치 x
