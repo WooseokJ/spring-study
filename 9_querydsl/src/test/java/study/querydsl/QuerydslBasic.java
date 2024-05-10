@@ -2,6 +2,9 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQueryFactory;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -467,4 +470,83 @@ public class QuerydslBasic {
 //        tuple = [member3, 25.0]
 //        tuple = [member4, 25.0]
     }
+    // case문 (select, where에서 사용가능)
+    // 단순한 조건
+    @Test
+    public void basicCase() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<String> result = queryFactory
+                .select(
+                        member.age
+                                .when(10).then("열살")
+                                .when(20).then("스무살")
+                                .otherwise("기타")
+                )
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+//        s = 열살
+//        s = 스무살
+//        s = 기타
+//        s = 기타
+    }
+
+    // 복잡한 조건
+    @Test
+    public void complexCase() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<String> result = queryFactory
+                .select(
+                        new CaseBuilder()
+                                .when(member.age
+                                        .between(0, 20)).then("0~20살")
+                                .when(member.age.between(21, 30)).then("21~30살")
+                                .otherwise("기타")
+                )
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+//        s = 0~20살
+//        s = 0~20살
+//        s = 21~30살
+//        s = 기타
+    }
+    //상수, 문자 더하기
+    // 상수
+    @Test
+    public void constant() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<Tuple> result = queryFactory.select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+//        tuple = [member1, A]
+//        tuple = [member2, A]
+//        tuple = [member3, A]
+//        tuple = [member4, A]
+    }
+    // 문자 더하기
+    @Test
+    public void concat() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<String> result = queryFactory
+                .select(member.username.concat("--")
+                        .concat(member.age.stringValue()))
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+        // s = member1--10
+    }
+
+
+
 }
