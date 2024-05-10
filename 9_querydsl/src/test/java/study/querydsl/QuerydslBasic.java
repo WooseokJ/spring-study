@@ -273,4 +273,85 @@ public class QuerydslBasic {
                 .containsExactly("teamA", "teamB");
     }
 
+    // join - on절
+    /*
+    *  on절 활용한 조인
+    *  1. 조인대상 필터
+    *  2. 연관관계 없는 엔티티 외부 조인.(주로 이거사용에 많이씀)
+    * */
+    
+    // 1. 조인대상 필터
+    // ex) 회원과 팀 조인하면서 , 팀이름이 teamA인 팀만 조인, 회원은 모두 조회
+    // jpql: select m, t from Member as m
+    //       left join m.team as t
+    //       on t.name = 'teamA'
+    @Test
+    public void join_on_filtering() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team)
+                .on(team.name.eq("teamA"))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+        //tuple = [Member(id=1, username=member1, age=10), Team(id=1, name=teamA)]
+        //tuple = [Member(id=2, username=member2, age=20), null]
+        //tuple = [Member(id=3, username=member3, age=30), Team(id=1, name=teamA)]
+        //tuple = [Member(id=4, username=member4, age=40), null]
+    }
+
+    @Test
+    public void join_on_filtering2() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .join(member.team, team)
+                .on(team.name.eq("teamA"))
+                // On절과 동일.
+                // .where(team.name.eq("teamA")
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+
+        //tuple = [Member(id=1, username=member1, age=10), Team(id=1, name=teamA)]
+        //tuple = [Member(id=3, username=member3, age=30), Team(id=1, name=teamA)]
+    }
+    // 2. 연관관계 없는 엔티티 외부 조인.(주로 이거사용에 많이씀)
+    // team이름과 회원이름이 같은 회원 조회 (회원이름이 teamA인 사람 찾기)
+    @Test
+    public void join_on_no_relation() {
+        // give( 회원이름이 팀이름과 같은애들 넣기)
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        // when
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team)
+                .on(member.username.eq(team.name))
+                .fetch();
+        //then
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+
+        //tuple = [Member(id=1, username=member1, age=10), null]
+        //tuple = [Member(id=2, username=member2, age=20), null]
+        //tuple = [Member(id=3, username=member3, age=30), null]
+        //tuple = [Member(id=4, username=member4, age=40), null]
+//        tuple = [Member(id=5, username=teamA, age=0), Team(id=1, name=teamA)]
+//        tuple = [Member(id=6, username=teamB, age=0), Team(id=2, name=teamB)]
+    }
+
+    
+
+    
 }
