@@ -7,6 +7,7 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQueryFactory;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -32,6 +34,7 @@ import static study.querydsl.entity.QMember.*;
 
 @SpringBootTest
 @Transactional
+
 public class QuerydslMid {
     @Autowired
     EntityManager em;
@@ -313,6 +316,129 @@ public class QuerydslMid {
     // 그런데 여기서 조건절을 하나로 만들수가있다. -> 조건을 여러개를 하나를 만들수가있다.
     private BooleanExpression allEq(String usernameCond, Integer ageCond) {
         return usernameEq(usernameCond).and(ageEq(ageCond));
+    }
+
+    /*** 수정, 삭제 를 한방에 처리하는 배채쿼리(벌크연산)*/
+    // 벌크 연산 - 문제점
+    @Test
+    @Commit
+    public void bulkUpdate1() {
+        // bulk연산 이전 (영속성 컨텍스트 상태)
+        // member1(나이 10) 의 이름 -> member1
+        // member2(나이 20) 의 이름 -> member2
+        // member3(나이 30) 의 이름 -> member3
+        // member4(나이 40) 의 이름 -> member4
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(25)) // 25살이하는 이름 비회원으로 변경
+                .execute();
+
+        // bulk연산 이후 (bulk연산시 바로 DB에 적용)
+        // member1(나이 10) 의 이름 -> 비회원
+        // member2(나이 20) 의 이름 -> 비회원
+        // member3(나이 30) 의 이름 -> member3
+        // member4(나이 40) 의 이름 -> member4
+
+        // 즉, 영속성 컨텍스트 상태와 DB상태가 서로 달라
+
+        // 이떄 조회같은거하면 안맞아.
+        List<Member> result = queryFactory.selectFrom(member).fetch();
+//        result.forEach(l -> System.out.println(l));
+
+    }
+
+    // 벌크 연산 - 해결책 (em.flush, em.clear)
+    @Test
+    @Commit
+    public void bulkUpdate2() {
+        // bulk연산 이전 (영속성 컨텍스트 상태)
+        // member1(나이 10) 의 이름 -> member1
+        // member2(나이 20) 의 이름 -> member2
+        // member3(나이 30) 의 이름 -> member3
+        // member4(나이 40) 의 이름 -> member4
+
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(25)) // 25살이하는 이름 비회원으로 변경
+                .execute();
+
+        // bulk연산 이후 (bulk연산시 바로 DB에 적용)
+        // member1(나이 10) 의 이름 -> 비회원
+        // member2(나이 20) 의 이름 -> 비회원
+        // member3(나이 30) 의 이름 -> member3
+        // member4(나이 40) 의 이름 -> member4
+
+        // 즉, 영속성 컨텍스트 상태와 DB상태가 서로 달라
+        // 그래서 db에 적용.
+        em.flush();
+        em.clear();
+
+        // 이떄 조회같은거하면 안맞아.
+        List<Member> result = queryFactory.selectFrom(member).fetch();
+        result.forEach(l -> System.out.println(l));
+
+    }
+
+    // 예제1. 모든나이 * 2 하기
+    @Test
+
+    public void bulkAdd() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        // 이렇게하면 바로 DB에 반영
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.multiply(2))
+                .execute();
+    }
+    //예제2. 20 이상 지워
+    @Test
+    @Commit
+    public void bulkDelete() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        // 이렇게하면 바로 DB에 반영
+        queryFactory
+                .delete(member)
+                .where(member.age.gt(20))
+                .execute();
+    }
+
+    /**SQL function 호출*/
+    // member -> M으로 변경
+    @Test
+    public void sqlFun() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        // member라는 단어를 M으로 바꿔서 조회
+        List<String> result = queryFactory
+                .select(Expressions.stringTemplate("function('replace', {0}, {1}, {2})",
+                        member.username,
+                        "member",
+                        "M")
+                )
+                .from(member)
+                .fetch();
+        result.forEach(l -> System.out.println("l = " + l));
+    }
+
+    // 모두 소문자로 바꿔서 조회하고싶어.
+    @Test
+    public void sqlFun2() {
+        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
+        List<String> result = queryFactory
+                .select(member.username)
+                .from(member)
+//                .where(member.username.eq(
+//                        Expressions.stringTemplate("function('lower', {0})", member.username)
+//                ))
+
+                .where(member.username.eq(member.username.lower())) //위와 동일.(이미 querydsl이 만들어둔거)
+                .fetch();
+        result.forEach(l -> System.out.println("l = " + l));
+
     }
 
 
