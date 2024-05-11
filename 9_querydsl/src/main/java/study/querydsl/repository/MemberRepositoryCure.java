@@ -1,7 +1,6 @@
 package study.querydsl.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -12,8 +11,6 @@ import study.querydsl.dto.MemberCond;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
 import study.querydsl.entity.Member;
-import study.querydsl.entity.QMember;
-import study.querydsl.entity.QTeam;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +21,7 @@ import static study.querydsl.entity.QTeam.*;
 // 순수 jpa + querydsl 로 repository 만들기
 @Repository
 @RequiredArgsConstructor
-public class MemberRepository {
+public class MemberRepositoryCure {
     private final EntityManager em; // 순수 jpa
     private final JPAQueryFactory queryFactory; // querydsl
 
@@ -104,7 +101,6 @@ public class MemberRepository {
 
     // 동적쿼리 - where절 파라미터 사용
     public List<MemberTeamDto> searchByWhere(MemberCond cond) {
-        System.out.println("cond = " + cond.getUsername());
         return queryFactory
                 .select(new QMemberTeamDto(
                         member.id.as("memberId"),

@@ -1,9 +1,11 @@
-package study.querydsl.repository;
+package study.querydsl.repository.springdataJPA;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberCond;
 import study.querydsl.dto.MemberTeamDto;
@@ -14,49 +16,36 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 @SpringBootTest
 @Transactional
-class MemberRepositoryTest {
+class MemberRepositorySpringJpaTest {
     @Autowired
     EntityManager em;
 
     @Autowired
-    MemberRepositoryCure memberRepository;
+    MemberRepository memberRepository;
 
-    // jpql 로 만든 repository 메서드 확인.
+    // 스프링 데이터 jpa 로 만든 메서드 동작 확인.
     @Test
     public void basicJPQLTest() {
-        // save 메서드 동작 확인.
+        // save 메서드 동작 확인. (spring data JPA가 제공).
         Member member = new Member("member1", 10);
         memberRepository.save(member);
 
-        // findbyId 메서드 동작확인.
+        // findbyId 메서드 동작확인 (spring data JPA가 제공).
         Member findMember = memberRepository.findById(member.getId()).get();
         assertThat(findMember).isEqualTo(member);
 
-        // findAll 메서드 동작확인
+        // findAll 메서드 동작확인(spring data JPA가 제공).
         List<Member> allMember = memberRepository.findAll();
         assertThat(allMember).containsExactly(member);
 
-        // findByUser메서드 동작확인 (이름동일한게 여러개일수있으니 List배열)
-        List<Member> findMembers = memberRepository.findbyUsername(member.getUsername());
+        // findByUser메서드 동작확인
+        List<Member> findMembers = memberRepository.findByUsername(member.getUsername());
         assertThat(findMembers).containsExactly(member);
     }
-    // querydsl로 만든 repository메서드 확인.
-    @Test
-    public void basicQuerydslTest() {
-        Member member = new Member("member1", 10);
-        memberRepository.save(member);
-
-        // findAll 메서드 동작확인
-        List<Member> allMember = memberRepository.findAll();
-        assertThat(allMember).containsExactly(member);
-
-        // findByUser메서드 동작확인 (이름동일한게 여러개일수있으니 List배열)
-        List<Member> findMembers = memberRepository.findbyUsername(member.getUsername());
-        assertThat(findMembers).containsExactly(member);
-    }
-    // 동적쿼리 - booleanBuilder, where절 동작확인.
+    // 동적쿼리 만든거 where절 파라미터로 메서드 동작 확인.
     @Test
     public void searchTest() {
         //given
@@ -68,8 +57,7 @@ class MemberRepositoryTest {
         cond.setTeamName("teamB");
 
         // then
-        List<MemberTeamDto> result = memberRepository.searchByBuilder(cond);
-//        List<MemberTeamDto> result = memberRepository.searchByWhere(cond);
+        List<MemberTeamDto> result = memberRepository.search(cond);
         assertThat(result).extracting("username").containsExactly("member4");
     }
     private void insertData(){
@@ -86,5 +74,22 @@ class MemberRepositoryTest {
         em.persist(member2);
         em.persist(member3);
         em.persist(member4);
+    }
+
+    /**스프링 데이터 jpa가 제공하는 Page이용해 만든 쿼리*/
+
+    @Test
+    public void searchPageSimple() {
+        //given
+        insertData();
+        //when
+        MemberCond cond = new MemberCond();
+        PageRequest pageRequest = PageRequest.of(0, 3);
+
+
+        // then
+        Page<MemberTeamDto> result = memberRepository.searchSimple(cond, pageRequest);
+        assertThat(result.getSize()).isEqualTo(3);
+        assertThat(result.getContent()).extracting("username").containsExactly("member1", "member2", "member3");
     }
 }
