@@ -2,12 +2,15 @@ package study.querydsl.repository.springdataJPA;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.StringUtils;
 import study.querydsl.dto.MemberCond;
@@ -78,6 +81,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom{
 
     }
 
+
     @Override
     public Page<MemberTeamDto> searchComplex(MemberCond cond, Pageable pageable) {
         // 쿼리 자체를 분리.
@@ -114,8 +118,6 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom{
 //                .fetchCount();
 //
 //        return new PageImpl<>(content, pageable, totalcount);
-
-
 
         // 최적화 후
         // countQuery 선언까지는 쿼리문 안날라감.
