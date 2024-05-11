@@ -1,4 +1,4 @@
-package study.querydsl;
+package study.querydsl.grammar;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
